@@ -64,28 +64,37 @@ button{
 button:active{opacity:.7}
 
 .periodos{
-  margin:10px 0 20px;
+  margin:15px 0 20px;
 }
 
 .titulo-periodos{
   font-size:14px;
   margin-bottom:10px;
+  font-weight:bold;
 }
 
 .periodos table{
   width:100%;
   border-collapse:collapse;
+  background:var(--card);
 }
 
+.periodos th,
 .periodos td{
   border:1px solid var(--border);
-  padding:5px;
-  width:50%;
+  padding:12px 8px;
+  text-align:center;
+}
+
+.periodos th{
+  background:#333335;
+  font-size:13px;
 }
 
 .periodo{
   width:100%;
   margin:0;
+  padding:9px 5px;
 }
 
 .periodo.activo{
@@ -127,17 +136,35 @@ button:active{opacity:.7}
   >
 
   <div class="periodos">
-    <div class="titulo-periodos">PERÍODO</div>
+    <div class="titulo-periodos">TABLA DE PERÍODOS</div>
 
     <table>
-      <tr>
-        <td>
-          <button id="btn1min" class="periodo activo">1 MIN</button>
-        </td>
-        <td>
-          <button id="btn5min" class="periodo">5 MIN</button>
-        </td>
-      </tr>
+      <thead>
+        <tr>
+          <th>PERÍODO</th>
+          <th>SELECCIÓN</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td>1 MINUTO</td>
+          <td>
+            <button id="btn1min" class="periodo activo">
+              SELECCIONADO
+            </button>
+          </td>
+        </tr>
+
+        <tr>
+          <td>5 MINUTOS</td>
+          <td>
+            <button id="btn5min" class="periodo">
+              ELEGIR
+            </button>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 
@@ -160,12 +187,20 @@ const symbolInput = document.getElementById("symbol");
 
 btn1min.addEventListener("click", () => {
   intervalo = "1min";
+
+  btn1min.textContent = "SELECCIONADO";
+  btn5min.textContent = "ELEGIR";
+
   btn1min.classList.add("activo");
   btn5min.classList.remove("activo");
 });
 
 btn5min.addEventListener("click", () => {
   intervalo = "5min";
+
+  btn5min.textContent = "SELECCIONADO";
+  btn1min.textContent = "ELEGIR";
+
   btn5min.classList.add("activo");
   btn1min.classList.remove("activo");
 });
@@ -231,8 +266,10 @@ async function analizar(){
 
     // Rechazo por mecha
     const cuerpo = Math.abs(actual.close - actual.open);
+
     const mechaSuperior =
       actual.high - Math.max(actual.open,actual.close);
+
     const mechaInferior =
       Math.min(actual.open,actual.close) - actual.low;
 
