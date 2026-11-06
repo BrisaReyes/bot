@@ -41,7 +41,7 @@ app.get("/api/velas", async (req, res) => {
 
     url.searchParams.set("symbol", cleanSymbol);
     url.searchParams.set("interval", interval);
-    url.searchParams.set("outputsize", "30");
+    url.searchParams.set("outputsize", "500");
     url.searchParams.set("apikey", API_KEY);
 
     const response = await fetch(url);
