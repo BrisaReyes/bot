@@ -57,8 +57,9 @@ document.getElementById("btn5min").onclick = () => {
 
 document.getElementById("aceptar").onclick = async () => {
 
-  const symbol = document.getElementById("symbol").value
-    .trim().replace(/\s+/g,"").toUpperCase();
+  const cleanSymbol = symbol.replace(/\//g, "").toUpperCase();
+url.searchParams.set("symbol", cleanSymbol);
+url.searchParams.set("interval", interval);
 
   if(!symbol) return mostrar("INGRESA UN PAR");
 
