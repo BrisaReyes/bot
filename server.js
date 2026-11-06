@@ -13,15 +13,33 @@ app.get("/api/velas", async (req, res) => {
     const { symbol, interval } = req.query;
 
     if (!symbol || !["1min", "5min"].includes(interval)) {
-      return res.status(400).json({ message: "Par o intervalo inválido" });
+      return res.status(400).json({
+        message: "Símbolo o intervalo inválido"
+      });
     }
 
     if (!API_KEY) {
-      return res.status(500).json({ message: "Falta API KEY del servidor" });
+      return res.status(500).json({
+        message: "Falta la API KEY del servidor"
+      });
     }
 
-    const url = new URL("https://api.twelvedata.com/time_series");
-    url.searchParams.set("symbol", symbol);
+    // Conserva EUR/USD y convierte EURUSD en EUR/USD.
+    let cleanSymbol = symbol
+      .trim()
+      .replace(/\s+/g, "")
+      .toUpperCase();
+
+    if (/^[A-Z]{6}$/.test(cleanSymbol)) {
+      cleanSymbol =
+        cleanSymbol.slice(0, 3) + "/" + cleanSymbol.slice(3);
+    }
+
+    const url = new URL(
+      "https://api.twelvedata.com/time_series"
+    );
+
+    url.searchParams.set("symbol", cleanSymbol);
     url.searchParams.set("interval", interval);
     url.searchParams.set("outputsize", "30");
     url.searchParams.set("apikey", API_KEY);
@@ -38,7 +56,11 @@ app.get("/api/velas", async (req, res) => {
     res.json(data);
 
   } catch (error) {
-    res.status(500).json({ message: "Error de conexión" });
+    console.error(error);
+
+    res.status(500).json({
+      message: "Error de conexión con el servidor"
+    });
   }
 });
 
