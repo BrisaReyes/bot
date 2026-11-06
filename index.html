@@ -63,9 +63,40 @@ button{
 
 button:active{opacity:.7}
 
-#opciones{
-  display:none;
-  margin-top:12px;
+.periodos{
+  margin:10px 0 20px;
+}
+
+.titulo-periodos{
+  font-size:14px;
+  margin-bottom:10px;
+}
+
+.periodos table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.periodos td{
+  border:1px solid var(--border);
+  padding:5px;
+  width:50%;
+}
+
+.periodo{
+  width:100%;
+  margin:0;
+}
+
+.periodo.activo{
+  background:#777;
+  border:2px solid white;
+  font-weight:bold;
+}
+
+#aceptar{
+  width:100%;
+  margin:10px 0;
 }
 
 #resultado{
@@ -95,12 +126,19 @@ button:active{opacity:.7}
     value="EUR/USD"
   >
 
-  <div>
-    <button id="btn1min">1 MIN ▾</button>
-  </div>
+  <div class="periodos">
+    <div class="titulo-periodos">PERÍODO</div>
 
-  <div id="opciones">
-    <button id="btn5min">5 MIN</button>
+    <table>
+      <tr>
+        <td>
+          <button id="btn1min" class="periodo activo">1 MIN</button>
+        </td>
+        <td>
+          <button id="btn5min" class="periodo">5 MIN</button>
+        </td>
+      </tr>
+    </table>
   </div>
 
   <button id="aceptar">ACEPTAR</button>
@@ -115,22 +153,21 @@ let intervalo = "1min";
 
 const btn1min = document.getElementById("btn1min");
 const btn5min = document.getElementById("btn5min");
-const opciones = document.getElementById("opciones");
 const aceptar = document.getElementById("aceptar");
 const resultado = document.getElementById("resultado");
 const estado = document.getElementById("estado");
 const symbolInput = document.getElementById("symbol");
 
 btn1min.addEventListener("click", () => {
-  opciones.style.display =
-    opciones.style.display === "block" ? "none" : "block";
+  intervalo = "1min";
+  btn1min.classList.add("activo");
+  btn5min.classList.remove("activo");
 });
 
 btn5min.addEventListener("click", () => {
   intervalo = "5min";
-  btn1min.textContent = "1 MIN ▾";
-  btn5min.textContent = "5 MIN ✓";
-  opciones.style.display = "none";
+  btn5min.classList.add("activo");
+  btn1min.classList.remove("activo");
 });
 
 aceptar.addEventListener("click", analizar);
@@ -171,7 +208,7 @@ async function analizar(){
       }))
       .reverse();
 
-    // Se excluye la última vela, que puede estar abierta.
+    // Excluir la última vela, que puede estar abierta.
     velas.pop();
 
     if(velas.length < 15){
@@ -194,8 +231,10 @@ async function analizar(){
 
     // Rechazo por mecha
     const cuerpo = Math.abs(actual.close - actual.open);
-    const mechaSuperior = actual.high - Math.max(actual.open,actual.close);
-    const mechaInferior = Math.min(actual.open,actual.close) - actual.low;
+    const mechaSuperior =
+      actual.high - Math.max(actual.open,actual.close);
+    const mechaInferior =
+      Math.min(actual.open,actual.close) - actual.low;
 
     if(mechaInferior > cuerpo * 1.5) puntosArriba += 1;
     if(mechaSuperior > cuerpo * 1.5) puntosAbajo += 1;
@@ -220,7 +259,7 @@ async function analizar(){
       puntosAbajo += 2;
     }
 
-    // Promedios móviles de cierres
+    // Promedios móviles
     const cierres = velas.map(v => v.close);
 
     function promedio(cantidad){
