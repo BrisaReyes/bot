@@ -22,7 +22,8 @@ button#aceptar{display:block;width:200px;margin:18px auto 0;border:2px solid var
 <h1>TRADING BOT</h1>
 
 <div class="caja">
-<label>PAR DE DIVISAS</label><br><br>
+<label for="symbol">PAR DE DIVISAS</label><br><br>
+
 <div class="interval-container">
 <input id="symbol" type="text" placeholder="EUR/USD">
 <button id="btn1min">1MIN</button>
@@ -30,13 +31,13 @@ button#aceptar{display:block;width:200px;margin:18px auto 0;border:2px solid var
 <button id="btn5min">5MIN</button>
 </div>
 </div>
+
 <button id="aceptar">ACEPTAR</button>
 </div>
 
 <div id="resultado" class="respuesta">ARRIBA / ABAJO</div>
 
 <script>
-const API_KEY = "TU_API_KEY";
 let timeframe = "1min";
 
 const resultado = document.getElementById("resultado");
@@ -55,21 +56,21 @@ document.getElementById("btn5min").onclick = () => {
 };
 
 document.getElementById("aceptar").onclick = async () => {
+
   const symbol = document.getElementById("symbol").value
-    .trim().replace(/\s+/g,"").replace("/","").toUpperCase();
+    .trim().replace(/\s+/g,"").toUpperCase();
 
   if(!symbol) return mostrar("INGRESA UN PAR");
-  if(API_KEY === "TU_API_KEY") return mostrar("FALTA API KEY");
 
   mostrar("PROCESANDO...");
 
-  try{
-    const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${timeframe}&outputsize=30&apikey=${API_KEY}`;
+  try {
+    const url = `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=${timeframe}`;
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if(!data.values){
+    if(!response.ok || !data.values){
       return mostrar(data.message || "ERROR API");
     }
 
@@ -81,7 +82,7 @@ document.getElementById("aceptar").onclick = async () => {
       l:Number(v.low)
     }));
 
-    // Excluir la vela más reciente, que puede estar abierta
+    // Excluir vela más reciente
     const closed = candles.slice(0,-1);
 
     if(closed.length < 15 || closed.some(v =>
@@ -93,22 +94,19 @@ document.getElementById("aceptar").onclick = async () => {
     let score = 0;
 
     for(let i=1;i<closed.length;i++){
-      const v=closed[i];
-      const p=closed[i-1];
+      const v = closed[i];
+      const p = closed[i-1];
 
-      const body=Math.abs(v.c-v.o);
-      const upper=v.h-Math.max(v.o,v.c);
-      const lower=Math.min(v.o,v.c)-v.l;
+      const body = Math.abs(v.c-v.o);
+      const upper = v.h-Math.max(v.o,v.c);
+      const lower = Math.min(v.o,v.c)-v.l;
 
-      // Dirección de la vela
       if(v.c>v.o) score++;
       else if(v.c<v.o) score--;
 
-      // Ruptura de máximos y mínimos
       if(v.c>p.h) score+=2;
       if(v.c<p.l) score-=2;
 
-      // Rechazo por mechas
       if(body>0 && lower>body*2 && v.c>v.o) score+=2;
       if(body>0 && upper>body*2 && v.c<v.o) score-=2;
 
@@ -121,15 +119,14 @@ document.getElementById("aceptar").onclick = async () => {
          v.o>=p.c && v.c<=p.o) score-=2;
     }
 
-    // Promedios de cierres
-    const closes=closed.map(v=>v.c);
+    const closes = closed.map(v=>v.c);
 
-    const avg=n =>
+    const avg = n =>
       closes.slice(-n).reduce((a,b)=>a+b,0)/n;
 
-    const p5=avg(5);
-    const p10=avg(10);
-    const p15=avg(15);
+    const p5 = avg(5);
+    const p10 = avg(10);
+    const p15 = avg(15);
 
     if(p5>p10 && p10>p15) score+=3;
     if(p5<p10 && p10<p15) score-=3;
@@ -140,7 +137,7 @@ document.getElementById("aceptar").onclick = async () => {
       "SIN SEÑAL"
     );
 
-  }catch(error){
+  } catch(error) {
     mostrar("ERROR DE CONEXIÓN");
   }
 };
