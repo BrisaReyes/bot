@@ -29,13 +29,13 @@ body{
 
 .container{
   width:100%;
-  max-width:420px;
+  max-width:440px;
   text-align:center;
 }
 
 h1{
   font-size:30px;
-  margin-bottom:30px;
+  margin-bottom:25px;
 }
 
 input{
@@ -50,43 +50,20 @@ input{
   margin-bottom:20px;
 }
 
-button{
-  padding:13px 22px;
-  border:1px solid var(--border);
-  border-radius:8px;
-  background:var(--card);
-  color:var(--text);
-  font-size:16px;
-  cursor:pointer;
-  margin:5px;
-}
-
-button:active{opacity:.7}
-
-.periodos{
-  margin:15px 0 20px;
-}
-
-.titulo-periodos{
-  font-size:14px;
-  margin-bottom:10px;
-  font-weight:bold;
-}
-
-.periodos table{
+table{
   width:100%;
   border-collapse:collapse;
   background:var(--card);
+  margin:15px 0;
 }
 
-.periodos th,
-.periodos td{
+th,td{
   border:1px solid var(--border);
-  padding:12px 8px;
+  padding:12px 7px;
   text-align:center;
 }
 
-.periodos th{
+th{
   background:#333335;
   font-size:13px;
 }
@@ -94,122 +71,140 @@ button:active{opacity:.7}
 .periodo{
   width:100%;
   margin:0;
-  padding:9px 5px;
-}
-
-.periodo.activo{
-  background:#777;
-  border:2px solid white;
-  font-weight:bold;
+  padding:10px 5px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--card);
+  color:var(--text);
+  font-size:15px;
 }
 
 #aceptar{
   width:100%;
-  margin:10px 0;
+  margin:12px 0;
+  padding:15px;
 }
 
 #resultado{
-  margin-top:30px;
-  font-size:28px;
+  margin-top:22px;
+  font-size:26px;
   font-weight:bold;
-  min-height:40px;
+  min-height:35px;
 }
 
 #estado{
-  margin-top:15px;
+  margin-top:12px;
   font-size:14px;
   color:#d0d0d0;
 }
+
+.arriba{color:#54d68b;font-weight:bold}
+.abajo{color:#ff6666;font-weight:bold}
+.neutro{color:#e6e6e6;font-weight:bold}
+
 </style>
 </head>
 
 <body>
 <div class="container">
 
-  <h1>TRADING BOT</h1>
+<h1>TRADING BOT</h1>
 
-  <input
-    id="symbol"
-    type="text"
-    placeholder="EUR/USD"
-    value="EUR/USD"
-  >
+<input
+  id="symbol"
+  type="text"
+  placeholder="EUR/USD"
+  value="EUR/USD"
+>
 
-  <div class="periodos">
-    <div class="titulo-periodos">TABLA DE PERÍODOS</div>
+<div><b>ANÁLISIS POR PERÍODO</b></div>
 
-    <table>
-      <thead>
-        <tr>
-          <th>PERÍODO</th>
-          <th>SELECCIÓN</th>
-        </tr>
-      </thead>
+<table>
+<thead>
+<tr>
+  <th>PERÍODO</th>
+  <th>ARRIBA</th>
+  <th>ABAJO</th>
+  <th>SEÑAL</th>
+</tr>
+</thead>
+<tbody id="tabla">
+<tr><td>5 MIN</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>10 MIN</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>15 MIN</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>20 MIN</td><td>-</td><td>-</td><td>-</td></tr>
+</tbody>
+</table>
 
-      <tbody>
-        <tr>
-          <td>1 MINUTO</td>
-          <td>
-            <button id="btn1min" class="periodo activo">
-              SELECCIONADO
-            </button>
-          </td>
-        </tr>
+<button id="aceptar">ACEPTAR</button>
 
-        <tr>
-          <td>5 MINUTOS</td>
-          <td>
-            <button id="btn5min" class="periodo">
-              ELEGIR
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <button id="aceptar">ACEPTAR</button>
-
-  <div id="resultado">ARRIBA / ABAJO</div>
-  <div id="estado"></div>
+<div id="resultado">ARRIBA / ABAJO</div>
+<div id="estado"></div>
 
 </div>
 
 <script>
-let intervalo = "1min";
-
-const btn1min = document.getElementById("btn1min");
-const btn5min = document.getElementById("btn5min");
 const aceptar = document.getElementById("aceptar");
 const resultado = document.getElementById("resultado");
 const estado = document.getElementById("estado");
-const symbolInput = document.getElementById("symbol");
-
-btn1min.addEventListener("click", () => {
-  intervalo = "1min";
-
-  btn1min.textContent = "SELECCIONADO";
-  btn5min.textContent = "ELEGIR";
-
-  btn1min.classList.add("activo");
-  btn5min.classList.remove("activo");
-});
-
-btn5min.addEventListener("click", () => {
-  intervalo = "5min";
-
-  btn5min.textContent = "SELECCIONADO";
-  btn1min.textContent = "ELEGIR";
-
-  btn5min.classList.add("activo");
-  btn1min.classList.remove("activo");
-});
+const tabla = document.getElementById("tabla");
 
 aceptar.addEventListener("click", analizar);
 
+function agruparVelas(velas, minutos){
+
+  const cantidad = minutos / 5;
+  const grupos = {};
+
+  velas.forEach(v => {
+    const tiempo = new Date(v.datetime).getTime();
+
+    if(!Number.isFinite(tiempo)) return;
+
+    const bloque = Math.floor(
+      tiempo / (minutos * 60000)
+    );
+
+    if(!grupos[bloque]){
+      grupos[bloque] = [];
+    }
+
+    grupos[bloque].push(v);
+  });
+
+  return Object.values(grupos)
+    .filter(g => g.length === cantidad)
+    .map(g => ({
+      open:g[0].open,
+      high:Math.max(...g.map(v=>v.high)),
+      low:Math.min(...g.map(v=>v.low)),
+      close:g[g.length-1].close
+    }));
+}
+
+function contarSenales(velas){
+
+  const ultimas = velas.slice(-10);
+
+  let arriba = 0;
+  let abajo = 0;
+
+  ultimas.forEach(v => {
+    if(v.close > v.open) arriba++;
+    if(v.close < v.open) abajo++;
+  });
+
+  let senal = "SIN SEÑAL";
+
+  if(arriba > abajo) senal = "ARRIBA";
+  if(abajo > arriba) senal = "ABAJO";
+
+  return {arriba, abajo, senal};
+}
+
 async function analizar(){
 
-  const symbol = symbolInput.value.trim();
+  const symbol = document.getElementById("symbol").value.trim();
 
   if(!symbol){
     estado.textContent = "Ingresá un símbolo";
@@ -218,10 +213,12 @@ async function analizar(){
 
   resultado.textContent = "ANALIZANDO...";
   estado.textContent = "";
+  aceptar.disabled = true;
 
   try{
+
     const response = await fetch(
-      `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=${intervalo}`
+      `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=5min`
     );
 
     const data = await response.json();
@@ -230,102 +227,96 @@ async function analizar(){
       throw new Error(data.message || "Error al obtener las velas");
     }
 
-    if(!data.values || data.values.length < 16){
-      throw new Error("No hay suficientes velas para analizar");
+    if(!data.values || data.values.length < 45){
+      throw new Error("No hay suficientes datos");
     }
 
-    const velas = data.values
-      .map(v => ({
-        open:Number(v.open),
-        high:Number(v.high),
-        low:Number(v.low),
-        close:Number(v.close)
-      }))
-      .reverse();
+    let velas = data.values.map(v => ({
+      datetime:v.datetime,
+      open:Number(v.open),
+      high:Number(v.high),
+      low:Number(v.low),
+      close:Number(v.close)
+    })).reverse();
 
-    // Excluir la última vela, que puede estar abierta.
+    // Excluir la última vela de 5 minutos,
+    // que podría estar todavía abierta.
     velas.pop();
 
-    if(velas.length < 15){
-      throw new Error("No hay suficientes velas cerradas");
+    const periodos = [5,10,15,20];
+
+    let resultados = [];
+
+    for(const minutos of periodos){
+
+      const agrupadas = agruparVelas(velas,minutos);
+
+      if(agrupadas.length < 10){
+        resultados.push({
+          minutos,
+          arriba:0,
+          abajo:0,
+          senal:"DATOS INSUFICIENTES"
+        });
+        continue;
+      }
+
+      const lectura = contarSenales(agrupadas);
+
+      resultados.push({
+        minutos,
+        ...lectura
+      });
     }
 
-    let puntosArriba = 0;
-    let puntosAbajo = 0;
+    tabla.innerHTML = resultados.map(r => {
 
-    const actual = velas[velas.length - 1];
-    const anterior = velas[velas.length - 2];
+      let clase = "neutro";
 
-    // Dirección de la vela
-    if(actual.close > actual.open) puntosArriba += 1;
-    if(actual.close < actual.open) puntosAbajo += 1;
+      if(r.senal === "ARRIBA") clase = "arriba";
+      if(r.senal === "ABAJO") clase = "abajo";
 
-    // Ruptura del máximo o mínimo anterior
-    if(actual.close > anterior.high) puntosArriba += 2;
-    if(actual.close < anterior.low) puntosAbajo += 2;
+      return `
+        <tr>
+          <td>${r.minutos} MIN</td>
+          <td>${r.arriba}</td>
+          <td>${r.abajo}</td>
+          <td class="${clase}">${r.senal}</td>
+        </tr>
+      `;
+    }).join("");
 
-    // Rechazo por mecha
-    const cuerpo = Math.abs(actual.close - actual.open);
+    const arribaTotal = resultados.filter(
+      r => r.senal === "ARRIBA"
+    ).length;
 
-    const mechaSuperior =
-      actual.high - Math.max(actual.open,actual.close);
+    const abajoTotal = resultados.filter(
+      r => r.senal === "ABAJO"
+    ).length;
 
-    const mechaInferior =
-      Math.min(actual.open,actual.close) - actual.low;
-
-    if(mechaInferior > cuerpo * 1.5) puntosArriba += 1;
-    if(mechaSuperior > cuerpo * 1.5) puntosAbajo += 1;
-
-    // Envolvente alcista
-    if(
-      actual.close > actual.open &&
-      anterior.close < anterior.open &&
-      actual.open <= anterior.close &&
-      actual.close >= anterior.open
-    ){
-      puntosArriba += 2;
-    }
-
-    // Envolvente bajista
-    if(
-      actual.close < actual.open &&
-      anterior.close > anterior.open &&
-      actual.open >= anterior.close &&
-      actual.close <= anterior.open
-    ){
-      puntosAbajo += 2;
-    }
-
-    // Promedios móviles
-    const cierres = velas.map(v => v.close);
-
-    function promedio(cantidad){
-      const ultimos = cierres.slice(-cantidad);
-      return ultimos.reduce((a,b)=>a+b,0) / ultimos.length;
-    }
-
-    const ma5 = promedio(5);
-    const ma10 = promedio(10);
-    const ma15 = promedio(15);
-
-    if(ma5 > ma10 && ma10 > ma15) puntosArriba += 3;
-    if(ma5 < ma10 && ma10 < ma15) puntosAbajo += 3;
-
-    // Resultado
-    if(puntosArriba > puntosAbajo){
+    if(arribaTotal >= 3){
       resultado.textContent = "ARRIBA 🟩";
-    }else if(puntosAbajo > puntosArriba){
-      resultado.textContent = "ABAJO 🟥";
-    }else{
-      resultado.textContent = "SIN SEÑAL";
+      estado.textContent =
+        `${arribaTotal} de 4 períodos coinciden en ARRIBA`;
     }
-
-    estado.textContent =
-      `Arriba: ${puntosArriba} | Abajo: ${puntosAbajo}`;
+    else if(abajoTotal >= 3){
+      resultado.textContent = "ABAJO 🟥";
+      estado.textContent =
+        `${abajoTotal} de 4 períodos coinciden en ABAJO`;
+    }
+    else{
+      resultado.textContent = "SIN COINCIDENCIA";
+      estado.textContent =
+        `Arriba: ${arribaTotal} períodos | Abajo: ${abajoTotal} períodos`;
+    }
 
   }catch(error){
+
     resultado.textContent = "SIN SEÑAL";
     estado.textContent = error.message;
+
+  }finally{
+    aceptar.disabled = false;
   }
 }
 </script>
