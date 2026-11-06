@@ -50,6 +50,34 @@ input{
   margin-bottom:20px;
 }
 
+.titulo{
+  font-weight:bold;
+  margin:15px 0 10px;
+}
+
+.timeframes{
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.timeframe{
+  flex:1;
+  padding:13px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--card);
+  color:var(--text);
+  font-size:16px;
+  cursor:pointer;
+}
+
+.timeframe.activo{
+  background:#777;
+  border:2px solid white;
+  font-weight:bold;
+}
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -59,30 +87,25 @@ table{
 
 th,td{
   border:1px solid var(--border);
-  padding:12px 7px;
+  padding:12px 5px;
   text-align:center;
 }
 
 th{
   background:#333335;
-  font-size:13px;
-}
-
-.periodo{
-  width:100%;
-  margin:0;
-  padding:10px 5px;
-  border:1px solid var(--border);
-  border-radius:6px;
-  background:var(--card);
-  color:var(--text);
-  font-size:15px;
+  font-size:12px;
 }
 
 #aceptar{
   width:100%;
   margin:12px 0;
   padding:15px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--card);
+  color:var(--text);
+  font-size:16px;
+  cursor:pointer;
 }
 
 #resultado{
@@ -101,7 +124,6 @@ th{
 .arriba{color:#54d68b;font-weight:bold}
 .abajo{color:#ff6666;font-weight:bold}
 .neutro{color:#e6e6e6;font-weight:bold}
-
 </style>
 </head>
 
@@ -117,7 +139,14 @@ th{
   value="EUR/USD"
 >
 
-<div><b>ANÁLISIS POR PERÍODO</b></div>
+<div class="titulo">TIMEFRAME</div>
+
+<div class="timeframes">
+  <button id="btn1min" class="timeframe activo">1 MIN</button>
+  <button id="btn5min" class="timeframe">5 MIN</button>
+</div>
+
+<div class="titulo">ANÁLISIS POR PERÍODO</div>
 
 <table>
 <thead>
@@ -129,10 +158,10 @@ th{
 </tr>
 </thead>
 <tbody id="tabla">
-<tr><td>5 MIN</td><td>-</td><td>-</td><td>-</td></tr>
-<tr><td>10 MIN</td><td>-</td><td>-</td><td>-</td></tr>
-<tr><td>15 MIN</td><td>-</td><td>-</td><td>-</td></tr>
-<tr><td>20 MIN</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>5</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>10</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>15</td><td>-</td><td>-</td><td>-</td></tr>
+<tr><td>20</td><td>-</td><td>-</td><td>-</td></tr>
 </tbody>
 </table>
 
@@ -144,25 +173,43 @@ th{
 </div>
 
 <script>
+let timeframe = "1min";
+
+const btn1min = document.getElementById("btn1min");
+const btn5min = document.getElementById("btn5min");
 const aceptar = document.getElementById("aceptar");
 const resultado = document.getElementById("resultado");
 const estado = document.getElementById("estado");
 const tabla = document.getElementById("tabla");
 
-aceptar.addEventListener("click", analizar);
+btn1min.addEventListener("click",()=>{
+  timeframe = "1min";
+  btn1min.classList.add("activo");
+  btn5min.classList.remove("activo");
+});
 
-function agruparVelas(velas, minutos){
+btn5min.addEventListener("click",()=>{
+  timeframe = "5min";
+  btn5min.classList.add("activo");
+  btn1min.classList.remove("activo");
+});
 
-  const cantidad = minutos / 5;
+aceptar.addEventListener("click",analizar);
+
+function agruparVelas(velas,periodo){
+
+  const minutosBase = timeframe === "1min" ? 1 : 5;
+  const cantidad = periodo / minutosBase;
   const grupos = {};
 
-  velas.forEach(v => {
+  velas.forEach(v=>{
+
     const tiempo = new Date(v.datetime).getTime();
 
     if(!Number.isFinite(tiempo)) return;
 
     const bloque = Math.floor(
-      tiempo / (minutos * 60000)
+      tiempo / (periodo * 60000)
     );
 
     if(!grupos[bloque]){
@@ -172,9 +219,11 @@ function agruparVelas(velas, minutos){
     grupos[bloque].push(v);
   });
 
-  return Object.values(grupos)
-    .filter(g => g.length === cantidad)
-    .map(g => ({
+  return Object.keys(grupos)
+    .sort((a,b)=>Number(a)-Number(b))
+    .map(k=>grupos[k])
+    .filter(g=>g.length === cantidad)
+    .map(g=>({
       open:g[0].open,
       high:Math.max(...g.map(v=>v.high)),
       low:Math.min(...g.map(v=>v.low)),
@@ -189,7 +238,7 @@ function contarSenales(velas){
   let arriba = 0;
   let abajo = 0;
 
-  ultimas.forEach(v => {
+  ultimas.forEach(v=>{
     if(v.close > v.open) arriba++;
     if(v.close < v.open) abajo++;
   });
@@ -199,7 +248,7 @@ function contarSenales(velas){
   if(arriba > abajo) senal = "ARRIBA";
   if(abajo > arriba) senal = "ABAJO";
 
-  return {arriba, abajo, senal};
+  return {arriba,abajo,senal};
 }
 
 async function analizar(){
@@ -218,7 +267,7 @@ async function analizar(){
   try{
 
     const response = await fetch(
-      `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=5min`
+      `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=${timeframe}`
     );
 
     const data = await response.json();
@@ -231,7 +280,7 @@ async function analizar(){
       throw new Error("No hay suficientes datos");
     }
 
-    let velas = data.values.map(v => ({
+    const velas = data.values.map(v=>({
       datetime:v.datetime,
       open:Number(v.open),
       high:Number(v.high),
@@ -239,21 +288,19 @@ async function analizar(){
       close:Number(v.close)
     })).reverse();
 
-    // Excluir la última vela de 5 minutos,
-    // que podría estar todavía abierta.
+    // Excluir la vela más reciente, que podría estar abierta.
     velas.pop();
 
     const periodos = [5,10,15,20];
+    const resultados = [];
 
-    let resultados = [];
+    for(const periodo of periodos){
 
-    for(const minutos of periodos){
-
-      const agrupadas = agruparVelas(velas,minutos);
+      const agrupadas = agruparVelas(velas,periodo);
 
       if(agrupadas.length < 10){
         resultados.push({
-          minutos,
+          periodo,
           arriba:0,
           abajo:0,
           senal:"DATOS INSUFICIENTES"
@@ -261,15 +308,13 @@ async function analizar(){
         continue;
       }
 
-      const lectura = contarSenales(agrupadas);
-
       resultados.push({
-        minutos,
-        ...lectura
+        periodo,
+        ...contarSenales(agrupadas)
       });
     }
 
-    tabla.innerHTML = resultados.map(r => {
+    tabla.innerHTML = resultados.map(r=>{
 
       let clase = "neutro";
 
@@ -278,7 +323,7 @@ async function analizar(){
 
       return `
         <tr>
-          <td>${r.minutos} MIN</td>
+          <td>${r.periodo}</td>
           <td>${r.arriba}</td>
           <td>${r.abajo}</td>
           <td class="${clase}">${r.senal}</td>
@@ -287,11 +332,11 @@ async function analizar(){
     }).join("");
 
     const arribaTotal = resultados.filter(
-      r => r.senal === "ARRIBA"
+      r=>r.senal === "ARRIBA"
     ).length;
 
     const abajoTotal = resultados.filter(
-      r => r.senal === "ABAJO"
+      r=>r.senal === "ABAJO"
     ).length;
 
     if(arribaTotal >= 3){
