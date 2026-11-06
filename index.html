@@ -1,208 +1,149 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>TRADING BOT</title>
-
 <style>
-  :root{
-    --bg:#3b3b3d;
-    --card:#4a4a4c;
-    --border:#bfb9b4;
-    --text:#e6e6e6;
-  }
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family: Arial, Helvetica, sans-serif;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding:30px 10px;
-  }
-
-  h1{
-    margin:0 0 24px 0;
-    font-size:36px;
-    letter-spacing:2px;
-    font-weight:700;
-  }
-
-  .caja{
-    width:680px;
-    max-width:95%;
-    border:2px solid var(--border);
-    padding:22px 30px;
-    box-sizing:border-box;
-    background:transparent;
-  }
-
-  .caja label{
-    font-size:18px;
-    font-weight:700;
-  }
-
-  input[type="text"]{
-    width:320px;
-    padding:10px 12px;
-    border:1px solid #8b8b8b;
-    background:#2f2f30;
-    color:var(--text);
-    outline:none;
-    box-shadow: 0 2px 0 rgba(0,0,0,0.6);
-  }
-
-  .interval-container{
-    display:flex;
-    gap:15px;
-    align-items:center;
-  }
-
-  .interval-container button{
-    padding:10px 15px;
-    background:#1e1e1e;
-    border:1px solid #555;
-    color:white;
-    border-radius:6px;
-    cursor:pointer;
-  }
-
-  .interval-container button:hover{
-    background:#2b2b2b;
-  }
-
-  button#aceptar{
-    margin-top:18px;
-    display:block;
-    width:200px;
-    padding:10px 22px;
-    border:2px solid var(--border);
-    background:transparent;
-    color:var(--text);
-    cursor:pointer;
-    font-weight:700;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.7);
-    margin-left:auto;
-    margin-right:auto;
-  }
-
-  .respuesta{
-    margin-top:36px;
-    width:640px;
-    max-width:95%;
-    border:2px solid var(--border);
-    padding:22px;
-    font-size:28px;
-    font-weight:700;
-    text-align:center;
-    background:transparent;
-  }
+:root{--bg:#3b3b3d;--border:#bfb9b4;--text:#e6e6e6}
+body{background:var(--bg);color:var(--text);font-family:Arial;display:flex;flex-direction:column;align-items:center;padding:30px 10px}
+h1{margin:0 0 24px;font-size:36px;letter-spacing:2px}
+.caja{width:680px;max-width:95%;border:2px solid var(--border);padding:22px 30px;box-sizing:border-box}
+label{font-size:18px;font-weight:bold}
+input{width:320px;max-width:55%;padding:10px;background:#2f2f30;color:white;border:1px solid #888}
+.interval-container{display:flex;gap:15px;align-items:center}
+button{padding:10px 15px;background:#1e1e1e;border:1px solid #555;color:white;cursor:pointer}
+button#aceptar{display:block;width:200px;margin:18px auto 0;border:2px solid var(--border);background:transparent;color:var(--text);font-weight:bold}
+.respuesta{margin-top:36px;width:640px;max-width:95%;border:2px solid var(--border);padding:22px;font-size:28px;font-weight:bold;text-align:center;box-sizing:border-box}
 </style>
-
 </head>
 <body>
 
 <h1>TRADING BOT</h1>
 
 <div class="caja">
-
-  <label for="symbol">PAR DE DIVISAS (ej: EUR/USD, EURUSD, eurusd, eur/usd)</label>
-  <br><br>
-
-  <div class="interval-container">
-      <input id="symbol" type="text">
-
-      <button id="btn1min">1MIN</button>
-
-      <div id="fiveMinContainer" style="display:none;">
-          <button id="btn5min">5MIN</button>
-      </div>
-  </div>
-
-  <button id="aceptar">ACEPTAR</button>
-
+<label>PAR DE DIVISAS</label><br><br>
+<div class="interval-container">
+<input id="symbol" type="text" placeholder="EUR/USD">
+<button id="btn1min">1MIN</button>
+<div id="fiveMinContainer" style="display:none">
+<button id="btn5min">5MIN</button>
+</div>
+</div>
+<button id="aceptar">ACEPTAR</button>
 </div>
 
 <div id="resultado" class="respuesta">ARRIBA / ABAJO</div>
 
 <script>
-const API_KEY = "c043c0e49bdb4b50a8c158852dd1e759";
-
+const API_KEY = "TU_API_KEY";
 let timeframe = "1min";
 
-// mostrar botón 5min después de tocar 1min
-document.getElementById("btn1min").addEventListener("click", () => {
-    timeframe = "1min";
-    document.getElementById("fiveMinContainer").style.display = "block";
-});
+const resultado = document.getElementById("resultado");
 
-document.getElementById("btn5min").addEventListener("click", () => {
-    timeframe = "5min";
-});
-
-// ----------- ANALISIS ---------------------
-
-function normalizeSymbol(input){
-  return input.replace(/\s+/g,'').replace('/','').toUpperCase();
+function mostrar(texto){
+  resultado.textContent = texto;
 }
 
-function avg(arr){
-  return arr.reduce((a,b)=>a+b,0) / arr.length;
-}
+document.getElementById("btn1min").onclick = () => {
+  timeframe = "1min";
+  document.getElementById("fiveMinContainer").style.display = "block";
+};
 
-function prom(closes,n){
-  return avg(closes.slice(0,n));
-}
+document.getElementById("btn5min").onclick = () => {
+  timeframe = "5min";
+};
 
-async function fetchData(symbol, tf){
-  const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${tf}&outputsize=20&apikey=${API_KEY}`;
-  const res = await fetch(url);
-  return res.json();
-}
+document.getElementById("aceptar").onclick = async () => {
+  const symbol = document.getElementById("symbol").value
+    .trim().replace(/\s+/g,"").replace("/","").toUpperCase();
 
-function mostrar(t){
-  document.getElementById("resultado").innerHTML = t;
-}
+  if(!symbol) return mostrar("INGRESA UN PAR");
+  if(API_KEY === "TU_API_KEY") return mostrar("FALTA API KEY");
 
-document.getElementById("aceptar").addEventListener("click", async () => {
-  
-  const raw = document.getElementById("symbol").value.trim();
-  if(!raw){
-    mostrar("INGRESA UN PAR");
-    return;
-  }
-
-  mostrar("Procesando...");
-
-  const symbol = normalizeSymbol(raw);
+  mostrar("PROCESANDO...");
 
   try{
-    const data = await fetchData(symbol, timeframe);
+    const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${timeframe}&outputsize=30&apikey=${API_KEY}`;
 
-    if(!data || data.status === "error"){
-      mostrar("ERROR API");
-      return;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if(!data.values){
+      return mostrar(data.message || "ERROR API");
     }
 
-    const closes = data.values.map(v => parseFloat(v.close));
+    // Orden cronológico
+    const candles = data.values.slice().reverse().map(v => ({
+      o:Number(v.open),
+      c:Number(v.close),
+      h:Number(v.high),
+      l:Number(v.low)
+    }));
 
-    const p5 = prom(closes,5);
-    const p10 = prom(closes,10);
-    const p15 = prom(closes,15);
+    // Excluir la vela más reciente, que puede estar abierta
+    const closed = candles.slice(0,-1);
 
-    let decision = "SIN SEÑAL";
+    if(closed.length < 15 || closed.some(v =>
+      ![v.o,v.c,v.h,v.l].every(Number.isFinite)
+    )){
+      return mostrar("DATOS INSUFICIENTES");
+    }
 
-    if(p5 > p10 && p10 > p15) decision = "ARRIBA 🟩";
-    else if(p5 < p10 && p10 < p15) decision = "ABAJO 🟥";
+    let score = 0;
 
-    mostrar(decision);
+    for(let i=1;i<closed.length;i++){
+      const v=closed[i];
+      const p=closed[i-1];
 
-  }catch(e){
-    mostrar("ERROR");
+      const body=Math.abs(v.c-v.o);
+      const upper=v.h-Math.max(v.o,v.c);
+      const lower=Math.min(v.o,v.c)-v.l;
+
+      // Dirección de la vela
+      if(v.c>v.o) score++;
+      else if(v.c<v.o) score--;
+
+      // Ruptura de máximos y mínimos
+      if(v.c>p.h) score+=2;
+      if(v.c<p.l) score-=2;
+
+      // Rechazo por mechas
+      if(body>0 && lower>body*2 && v.c>v.o) score+=2;
+      if(body>0 && upper>body*2 && v.c<v.o) score-=2;
+
+      // Envolvente alcista
+      if(p.c<p.o && v.c>v.o &&
+         v.o<=p.c && v.c>=p.o) score+=2;
+
+      // Envolvente bajista
+      if(p.c>p.o && v.c<v.o &&
+         v.o>=p.c && v.c<=p.o) score-=2;
+    }
+
+    // Promedios de cierres
+    const closes=closed.map(v=>v.c);
+
+    const avg=n =>
+      closes.slice(-n).reduce((a,b)=>a+b,0)/n;
+
+    const p5=avg(5);
+    const p10=avg(10);
+    const p15=avg(15);
+
+    if(p5>p10 && p10>p15) score+=3;
+    if(p5<p10 && p10<p15) score-=3;
+
+    mostrar(
+      score>=3 ? "ARRIBA 🟩" :
+      score<=-3 ? "ABAJO 🟥" :
+      "SIN SEÑAL"
+    );
+
+  }catch(error){
+    mostrar("ERROR DE CONEXIÓN");
   }
-
-});
+};
 </script>
 
 </body>
