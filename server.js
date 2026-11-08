@@ -7,60 +7,41 @@ const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.TWELVE_DATA_API_KEY;
 
 app.use(express.static(__dirname));
+app.use(express.json());
 
 app.get("/api/velas", async (req, res) => {
   try {
-    const { symbol, interval } = req.query;
+    const symbol = req.query.symbol || "EUR/USD";
+    const interval = req.query.interval || "1min";
 
-    if (!symbol || !["1min", "5min"].includes(interval)) {
-      return res.status(400).json({
-        message: "Símbolo o intervalo inválido"
-      });
+    if (!["1min", "5min"].includes(interval)) {
+      return res.status(400).json({ error: "Intervalo inválido" });
     }
 
     if (!API_KEY) {
-      return res.status(500).json({
-        message: "Falta la API KEY del servidor"
-      });
+      return res.status(500).json({ error: "Falta API KEY" });
     }
 
-    // Conserva EUR/USD y convierte EURUSD en EUR/USD.
-    let cleanSymbol = symbol
-      .trim()
-      .replace(/\s+/g, "")
-      .toUpperCase();
+    const url = new URL("https://api.twelvedata.com/time_series");
 
-    if (/^[A-Z]{6}$/.test(cleanSymbol)) {
-      cleanSymbol =
-        cleanSymbol.slice(0, 3) + "/" + cleanSymbol.slice(3);
-    }
-
-    const url = new URL(
-      "https://api.twelvedata.com/time_series"
-    );
-
-    url.searchParams.set("symbol", cleanSymbol);
+    url.searchParams.set("symbol", symbol);
     url.searchParams.set("interval", interval);
-    url.searchParams.set("outputsize", "500");
+    url.searchParams.set("outputsize", "30");
     url.searchParams.set("apikey", API_KEY);
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if (!response.ok || !data.values) {
+    if (!data.values) {
       return res.status(400).json({
-        message: data.message || "Error de Twelve Data"
+        error: data.message || "No se recibieron velas"
       });
     }
 
     res.json(data);
 
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      message: "Error de conexión con el servidor"
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
