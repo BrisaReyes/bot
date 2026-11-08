@@ -12,311 +12,320 @@
   --card:#4a4a4c;
   --border:#bfb9b4;
   --text:#e6e6e6;
+  --rojo:#d9534f;
+  --verde:#28a745;
 }
 
 *{box-sizing:border-box}
 
 body{
   margin:0;
-  min-height:100vh;
+  padding:15px;
   background:var(--bg);
   color:var(--text);
   font-family:Arial,sans-serif;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:20px;
 }
 
-.container{
-  width:100%;
-  max-width:440px;
-  text-align:center;
+.contenedor{
+  max-width:650px;
+  margin:auto;
 }
 
 h1{
-  font-size:30px;
-  margin-bottom:25px;
+  text-align:center;
+  font-size:27px;
+  margin:15px 0 25px;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:15px;
 }
 
 input{
   width:100%;
-  padding:15px;
+  padding:13px;
+  border-radius:6px;
   border:1px solid var(--border);
-  border-radius:8px;
-  background:var(--card);
-  color:var(--text);
-  font-size:18px;
+  background:#333;
+  color:white;
+  font-size:17px;
   text-align:center;
-  margin-bottom:20px;
 }
 
 .titulo{
+  text-align:center;
+  margin-bottom:12px;
   font-weight:bold;
-  margin:15px 0 10px;
 }
 
-.timeframes{
-  display:flex;
+.grupo{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
   gap:10px;
-  margin-bottom:20px;
 }
 
-.timeframe{
-  flex:1;
-  padding:13px;
+button{
+  padding:13px 8px;
   border:1px solid var(--border);
-  border-radius:8px;
-  background:var(--card);
-  color:var(--text);
-  font-size:16px;
+  border-radius:7px;
+  background:#39393b;
+  color:white;
+  font-weight:bold;
+  font-size:15px;
   cursor:pointer;
 }
 
-.timeframe.activo{
+button.activo{
   background:#777;
   border:2px solid white;
-  font-weight:bold;
 }
+
+.periodos{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:7px;
+}
+
+.periodos button{
+  padding:14px 4px;
+}
+
+.aceptar{
+  width:100%;
+  background:#68686a;
+  margin-top:15px;
+  font-size:17px;
+}
+
+.resultado{
+  text-align:center;
+  padding:20px 10px;
+  margin-top:15px;
+  border-radius:8px;
+  background:#333;
+  display:none;
+}
+
+.direccion{
+  font-size:32px;
+  font-weight:bold;
+  margin:12px;
+}
+
+.arriba{color:#40d477}
+.abajo{color:#ff6262}
 
 table{
   width:100%;
   border-collapse:collapse;
-  background:var(--card);
-  margin:15px 0;
-}
-
-th,td{
-  border:1px solid var(--border);
-  padding:13px 5px;
-  text-align:center;
-}
-
-th{
-  background:#333335;
+  margin-top:12px;
   font-size:13px;
 }
 
-#aceptar{
-  width:100%;
-  margin:12px 0;
-  padding:15px;
-  border:1px solid var(--border);
-  border-radius:8px;
-  background:var(--card);
-  color:var(--text);
-  font-size:16px;
-  cursor:pointer;
+th,td{
+  border:1px solid #777;
+  padding:8px 4px;
+  text-align:center;
 }
 
-#aceptar:disabled{
-  opacity:.6;
+th{background:#333}
+
+.estado{
+  text-align:center;
+  font-size:13px;
+  margin-top:10px;
+  color:#ddd;
 }
 
-#resultado{
-  margin-top:22px;
-  font-size:26px;
-  font-weight:bold;
-  min-height:35px;
-}
-
-#estado{
-  margin-top:12px;
-  font-size:14px;
-  color:#d0d0d0;
-}
-
-.arriba{
-  color:#54d68b;
-  font-weight:bold;
-}
-
-.abajo{
-  color:#ff6666;
-  font-weight:bold;
-}
+.error{color:#ff7777}
 </style>
 </head>
 
 <body>
-<div class="container">
+
+<div class="contenedor">
 
 <h1>TRADING BOT</h1>
 
-<input
-  id="symbol"
-  type="text"
-  placeholder="EUR/USD"
-  value="EUR/USD"
->
-
-<div class="titulo">TIMEFRAME</div>
-
-<div class="timeframes">
-  <button id="btn1min" class="timeframe activo">1 MIN</button>
-  <button id="btn5min" class="timeframe">5 MIN</button>
+<div class="panel">
+  <input id="symbol" type="text" value="EUR/USD" placeholder="EUR/USD">
 </div>
 
-<div class="titulo">ANÁLISIS POR PERÍODO</div>
+<div class="panel">
+  <div class="titulo">PERÍODO DE VELA</div>
 
-<table>
-<thead>
-<tr>
-  <th>PERÍODO</th>
-  <th>ARRIBA</th>
-  <th>ABAJO</th>
-</tr>
-</thead>
+  <div class="grupo">
+    <button class="activo" id="btn1min" onclick="seleccionarTiempo('1min',this)">1 MIN</button>
+    <button id="btn5min" onclick="seleccionarTiempo('5min',this)">5 MIN</button>
+  </div>
+</div>
 
-<tbody id="tabla">
-<tr><td>5</td><td>-</td><td>-</td></tr>
-<tr><td>10</td><td>-</td><td>-</td></tr>
-<tr><td>15</td><td>-</td><td>-</td></tr>
-<tr><td>20</td><td>-</td><td>-</td></tr>
-</tbody>
-</table>
+<div class="panel">
+  <div class="titulo">CANTIDAD DE VELAS</div>
 
-<button id="aceptar">ACEPTAR</button>
+  <div class="periodos">
+    <button class="activo" onclick="seleccionarPeriodo(5,this)">5</button>
+    <button onclick="seleccionarPeriodo(10,this)">10</button>
+    <button onclick="seleccionarPeriodo(15,this)">15</button>
+    <button onclick="seleccionarPeriodo(20,this)">20</button>
+  </div>
 
-<div id="resultado">ARRIBA / ABAJO</div>
-<div id="estado"></div>
+  <button class="aceptar" id="aceptar" onclick="analizar()">ACEPTAR</button>
+</div>
+
+<div class="panel">
+  <div class="titulo">RESULTADO</div>
+
+  <div id="resultado" class="resultado">
+    <div id="direccion" class="direccion"></div>
+    <div id="detalle"></div>
+  </div>
+
+  <div id="estado" class="estado">Esperando análisis...</div>
+</div>
+
+<div class="panel">
+  <div class="titulo">VELAS ANALIZADAS</div>
+
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr>
+          <th>FECHA</th>
+          <th>APERTURA</th>
+          <th>MÁXIMO</th>
+          <th>MÍNIMO</th>
+          <th>CIERRE</th>
+          <th>DIRECCIÓN</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
+</div>
 
 </div>
 
 <script>
 let timeframe = "1min";
+let periodo = 5;
 
-const btn1min = document.getElementById("btn1min");
-const btn5min = document.getElementById("btn5min");
-const aceptar = document.getElementById("aceptar");
-const resultado = document.getElementById("resultado");
-const estado = document.getElementById("estado");
-const tabla = document.getElementById("tabla");
+function seleccionarTiempo(valor,boton){
+  timeframe = valor;
 
-btn1min.addEventListener("click",()=>{
-  timeframe = "1min";
-  btn1min.classList.add("activo");
-  btn5min.classList.remove("activo");
-});
+  document.querySelectorAll("#btn1min,#btn5min")
+    .forEach(b=>b.classList.remove("activo"));
 
-btn5min.addEventListener("click",()=>{
-  timeframe = "5min";
-  btn5min.classList.add("activo");
-  btn1min.classList.remove("activo");
-});
+  boton.classList.add("activo");
+}
 
-aceptar.addEventListener("click",analizar);
+function seleccionarPeriodo(valor,boton){
+  periodo = valor;
 
-// Cuenta exactamente las últimas N velas cerradas.
-function contarSenales(velas, periodo){
+  document.querySelectorAll(".periodos button")
+    .forEach(b=>b.classList.remove("activo"));
 
-  const ultimas = velas.slice(-periodo);
-
-  let arriba = 0;
-  let abajo = 0;
-  let neutras = 0;
-
-  for(const v of ultimas){
-
-    if(v.close > v.open){
-      arriba++;
-    }else if(v.close < v.open){
-      abajo++;
-    }else{
-      neutras++;
-    }
-  }
-
-  return {
-    arriba,
-    abajo,
-    neutras,
-    total:ultimas.length
-  };
+  boton.classList.add("activo");
 }
 
 async function analizar(){
 
   const symbol = document.getElementById("symbol").value.trim();
+  const estado = document.getElementById("estado");
+  const resultado = document.getElementById("resultado");
+  const tabla = document.getElementById("tabla");
+  const aceptar = document.getElementById("aceptar");
 
   if(!symbol){
-    estado.textContent = "Ingresá un símbolo";
+    estado.textContent = "Ingresá un símbolo.";
     return;
   }
 
-  resultado.textContent = "ANALIZANDO...";
-  estado.textContent = "";
   aceptar.disabled = true;
+  resultado.style.display = "none";
+  tabla.innerHTML = "";
+  estado.textContent = "Analizando velas...";
 
   try{
 
-    const response = await fetch(
-      `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=${timeframe}`
-    );
+    const url = `/api/velas?symbol=${encodeURIComponent(symbol)}&interval=${timeframe}`;
 
-    const data = await response.json();
+    const respuesta = await fetch(url);
+    const data = await respuesta.json();
 
-    if(!response.ok){
-      throw new Error(data.error || "Error al obtener velas");
+    if(!respuesta.ok){
+      throw new Error(data.error || "Error al obtener las velas");
     }
 
-    if(!data.values || data.values.length < 21){
-      throw new Error("Datos insuficientes");
+    if(!data.values || data.values.length < periodo){
+      throw new Error("No hay suficientes velas disponibles.");
     }
 
-    const velas = data.values.map(v=>({
-      datetime:v.datetime,
-      open:Number(v.open),
-      high:Number(v.high),
-      low:Number(v.low),
-      close:Number(v.close)
-    })).reverse();
+    const velas = data.values.slice(-periodo);
 
-    // Se excluye la vela más reciente.
-    velas.pop();
+    let subidas = 0;
+    let bajadas = 0;
+    let neutras = 0;
 
-    const periodos = [5,10,15,20];
+    velas.forEach(v=>{
 
-    const resultados = periodos.map(periodo=>{
-      return {
-        periodo,
-        ...contarSenales(velas,periodo)
-      };
+      const apertura = Number(v.open);
+      const cierre = Number(v.close);
+
+      if(cierre > apertura) subidas++;
+      else if(cierre < apertura) bajadas++;
+      else neutras++;
+
+      const direccion = cierre > apertura
+        ? '<span class="arriba">ALZA</span>'
+        : cierre < apertura
+        ? '<span class="abajo">BAJA</span>'
+        : "NEUTRA";
+
+      tabla.innerHTML += `
+        <tr>
+          <td>${v.datetime}</td>
+          <td>${apertura}</td>
+          <td>${v.high}</td>
+          <td>${v.low}</td>
+          <td>${cierre}</td>
+          <td>${direccion}</td>
+        </tr>
+      `;
     });
 
-    tabla.innerHTML = resultados.map(r=>`
-      <tr>
-        <td>${r.periodo}</td>
-        <td class="arriba">${r.arriba}</td>
-        <td class="abajo">${r.abajo}</td>
-      </tr>
-    `).join("");
+    let texto = "";
+    let clase = "";
 
-    const cinco = resultados[0];
-
-    if(cinco.arriba > cinco.abajo){
-      resultado.textContent = "ARRIBA 🟩";
-    }else if(cinco.abajo > cinco.arriba){
-      resultado.textContent = "ABAJO 🟥";
+    if(subidas > bajadas){
+      texto = "↑ ARRIBA";
+      clase = "arriba";
+    }else if(bajadas > subidas){
+      texto = "↓ ABAJO";
+      clase = "abajo";
     }else{
-      resultado.textContent = "SIN SEÑAL";
+      texto = "SIN DIRECCIÓN CLARA";
+      clase = "";
     }
 
-    estado.textContent =
-      resultados.map(r=>
-        `${r.periodo}: ${r.arriba}↑ ${r.abajo}↓`
-      ).join(" | ");
+    document.getElementById("direccion").textContent = texto;
+    document.getElementById("direccion").className = "direccion " + clase;
+
+    document.getElementById("detalle").textContent =
+      `Período: ${periodo} velas | Alzas: ${subidas} | Bajas: ${bajadas} | Neutras: ${neutras}`;
+
+    resultado.style.display = "block";
+    estado.textContent = "Análisis completado.";
 
   }catch(error){
-
-    resultado.textContent = "SIN SEÑAL";
-    estado.textContent = error.message;
-
-  }finally{
-
-    aceptar.disabled = false;
-
+    estado.innerHTML = `<span class="error">${error.message}</span>`;
   }
+
+  aceptar.disabled = false;
 }
 </script>
 
