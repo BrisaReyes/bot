@@ -208,7 +208,7 @@ btn5min.addEventListener("click",()=>{
 aceptar.addEventListener("click",analizar);
 
 // Cuenta exactamente las últimas N velas cerradas.
-function contarSenales(velas,periodo){
+function contarSenales(velas, periodo){
 
   const ultimas = velas.slice(-periodo);
 
@@ -216,19 +216,16 @@ function contarSenales(velas,periodo){
   let abajo = 0;
   let neutras = 0;
 
-  ultimas.forEach(v=>{
+  for(const v of ultimas){
 
     if(v.close > v.open){
       arriba++;
-    }
-    else if(v.close < v.open){
+    }else if(v.close < v.open){
       abajo++;
-    }
-    else{
+    }else{
       neutras++;
     }
-
-  });
+  }
 
   return {
     arriba,
@@ -260,45 +257,32 @@ async function analizar(){
     const data = await response.json();
 
     if(!response.ok){
-      throw new Error(data.error || data.message || "Error al obtener las velas");
+      throw new Error(data.error || "Error al obtener velas");
     }
 
     if(!data.values || data.values.length < 21){
-      throw new Error("No hay suficientes datos");
+      throw new Error("Datos insuficientes");
     }
 
     const velas = data.values.map(v=>({
-
       datetime:v.datetime,
       open:Number(v.open),
       high:Number(v.high),
       low:Number(v.low),
       close:Number(v.close)
-
     })).reverse();
 
-    if(velas.some(v=>
-      !Number.isFinite(v.open) ||
-      !Number.isFinite(v.close)
-    )){
-      throw new Error("Datos de velas inválidos");
-    }
-
-    // Excluir la última vela si todavía está abierta.
+    // Se excluye la vela más reciente.
     velas.pop();
 
     const periodos = [5,10,15,20];
 
-    const resultados = periodos.map(periodo=>({
-
-      periodo,
-      ...contarSenales(velas,periodo)
-
-    }));
-
-    if(resultados.some(r=>r.total !== r.periodo)){
-      throw new Error("No hay suficientes velas cerradas");
-    }
+    const resultados = periodos.map(periodo=>{
+      return {
+        periodo,
+        ...contarSenales(velas,periodo)
+      };
+    });
 
     tabla.innerHTML = resultados.map(r=>`
       <tr>
@@ -308,20 +292,20 @@ async function analizar(){
       </tr>
     `).join("");
 
-    const primero = resultados[0];
+    const cinco = resultados[0];
 
-    if(primero.arriba > primero.abajo){
+    if(cinco.arriba > cinco.abajo){
       resultado.textContent = "ARRIBA 🟩";
-    }
-    else if(primero.abajo > primero.arriba){
+    }else if(cinco.abajo > cinco.arriba){
       resultado.textContent = "ABAJO 🟥";
-    }
-    else{
+    }else{
       resultado.textContent = "SIN SEÑAL";
     }
 
     estado.textContent =
-      `Últimas 5 velas: ${primero.arriba} ARRIBA · ${primero.abajo} ABAJO · ${primero.neutras} NEUTRAS`;
+      resultados.map(r=>
+        `${r.periodo}: ${r.arriba}↑ ${r.abajo}↓`
+      ).join(" | ");
 
   }catch(error){
 
