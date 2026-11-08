@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -206,54 +207,35 @@ btn5min.addEventListener("click",()=>{
 
 aceptar.addEventListener("click",analizar);
 
-function agruparVelas(velas,periodo){
+// Cuenta exactamente las últimas N velas cerradas.
+function contarSenales(velas,periodo){
 
-  const minutosBase = timeframe === "1min" ? 1 : 5;
-  const cantidad = periodo / minutosBase;
-  const grupos = {};
-
-  velas.forEach(v=>{
-
-    const tiempo = new Date(v.datetime).getTime();
-
-    if(!Number.isFinite(tiempo)) return;
-
-    const bloque = Math.floor(
-      tiempo / (periodo * 60000)
-    );
-
-    if(!grupos[bloque]){
-      grupos[bloque] = [];
-    }
-
-    grupos[bloque].push(v);
-  });
-
-  return Object.keys(grupos)
-    .sort((a,b)=>Number(a)-Number(b))
-    .map(k=>grupos[k])
-    .filter(g=>g.length === cantidad)
-    .map(g=>({
-      open:g[0].open,
-      high:Math.max(...g.map(v=>v.high)),
-      low:Math.min(...g.map(v=>v.low)),
-      close:g[g.length-1].close
-    }));
-}
-
-function contarSenales(velas){
-
-  const ultimas = velas.slice(-10);
+  const ultimas = velas.slice(-periodo);
 
   let arriba = 0;
   let abajo = 0;
+  let neutras = 0;
 
   ultimas.forEach(v=>{
-    if(v.close > v.open) arriba++;
-    if(v.close < v.open) abajo++;
+
+    if(v.close > v.open){
+      arriba++;
+    }
+    else if(v.close < v.open){
+      abajo++;
+    }
+    else{
+      neutras++;
+    }
+
   });
 
-  return {arriba,abajo};
+  return {
+    arriba,
+    abajo,
+    neutras,
+    total:ultimas.length
+  };
 }
 
 async function analizar(){
@@ -278,85 +260,68 @@ async function analizar(){
     const data = await response.json();
 
     if(!response.ok){
-      throw new Error(data.message || "Error al obtener las velas");
+      throw new Error(data.error || data.message || "Error al obtener las velas");
     }
 
-    if(!data.values || data.values.length < 45){
+    if(!data.values || data.values.length < 21){
       throw new Error("No hay suficientes datos");
     }
 
     const velas = data.values.map(v=>({
+
       datetime:v.datetime,
       open:Number(v.open),
       high:Number(v.high),
       low:Number(v.low),
       close:Number(v.close)
+
     })).reverse();
 
-    // Excluir la vela más reciente, que podría estar abierta.
+    if(velas.some(v=>
+      !Number.isFinite(v.open) ||
+      !Number.isFinite(v.close)
+    )){
+      throw new Error("Datos de velas inválidos");
+    }
+
+    // Excluir la última vela si todavía está abierta.
     velas.pop();
 
     const periodos = [5,10,15,20];
-    const resultados = [];
 
-    for(const periodo of periodos){
+    const resultados = periodos.map(periodo=>({
 
-      const agrupadas = agruparVelas(velas,periodo);
+      periodo,
+      ...contarSenales(velas,periodo)
 
-      if(agrupadas.length < 10){
-        resultados.push({
-          periodo,
-          arriba:0,
-          abajo:0,
-          insuficiente:true
-        });
-        continue;
-      }
+    }));
 
-      resultados.push({
-        periodo,
-        ...contarSenales(agrupadas),
-        insuficiente:false
-      });
+    if(resultados.some(r=>r.total !== r.periodo)){
+      throw new Error("No hay suficientes velas cerradas");
     }
 
     tabla.innerHTML = resultados.map(r=>`
       <tr>
         <td>${r.periodo}</td>
-        <td class="arriba">${r.insuficiente ? "-" : r.arriba}</td>
-        <td class="abajo">${r.insuficiente ? "-" : r.abajo}</td>
+        <td class="arriba">${r.arriba}</td>
+        <td class="abajo">${r.abajo}</td>
       </tr>
     `).join("");
 
-    const validos = resultados.filter(r=>!r.insuficiente);
+    const primero = resultados[0];
 
-    const arribaTotal = validos.filter(
-      r=>r.arriba > r.abajo
-    ).length;
-
-    const abajoTotal = validos.filter(
-      r=>r.abajo > r.arriba
-    ).length;
-
-    if(validos.length < 4){
-      resultado.textContent = "SIN SEÑAL";
-      estado.textContent = "Datos insuficientes para comparar los cuatro períodos";
-    }
-    else if(arribaTotal >= 3){
+    if(primero.arriba > primero.abajo){
       resultado.textContent = "ARRIBA 🟩";
-      estado.textContent =
-        `${arribaTotal} de 4 períodos coinciden en ARRIBA`;
     }
-    else if(abajoTotal >= 3){
+    else if(primero.abajo > primero.arriba){
       resultado.textContent = "ABAJO 🟥";
-      estado.textContent =
-        `${abajoTotal} de 4 períodos coinciden en ABAJO`;
     }
     else{
-      resultado.textContent = "SIN COINCIDENCIA";
-      estado.textContent =
-        `Arriba: ${arribaTotal} períodos | Abajo: ${abajoTotal} períodos`;
+      resultado.textContent = "SIN SEÑAL";
     }
+
+    estado.textContent =
+      `Últimas 5 velas: ${primero.arriba} ARRIBA · ${primero.abajo} ABAJO · ${primero.neutras} NEUTRAS`;
 
   }catch(error){
 
@@ -364,7 +329,9 @@ async function analizar(){
     estado.textContent = error.message;
 
   }finally{
+
     aceptar.disabled = false;
+
   }
 }
 </script>
